@@ -1,6 +1,6 @@
 # Arduino STS_Servos driver
 
-A library to drive [Feetech's STS smart servos](https://www.google.com/search?client=firefox-b-d&q=feetech+sts3215) - in particular the STS 3215.
+A library to drive [Feetech's STS smart servos](https://www.feetechrc.com/74v-19-kgcm-plastic-case-metal-tooth-magnetic-code-double-axis-ttl-series-steering-gear.html) - in particular the STS 3215.
 This low-cost servo offers very interesting properties at a quite cheap price (approx. $15 at the time of writing):
  - Stall torque 19kg.cm
  - Running speed 50rpm @ 7V.
