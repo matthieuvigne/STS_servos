@@ -1,5 +1,3 @@
-/// \author MiAM Robotique, Matthieu Vigne
-/// \copyright GNU GPLv3
 #include "STSServoDriver.h"
 
 namespace instruction
