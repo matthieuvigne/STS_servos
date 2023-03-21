@@ -20,6 +20,10 @@ STSServoDriver::STSServoDriver():
 
 bool STSServoDriver::init(byte const& dirPin, HardwareSerial *serialPort,long const& baudRate)
 {
+    #ifdef SERIAL_H
+    if (serialPort == nullptr)
+        serialPort = &Serial;
+    #endif
     // Open port
     port_ = serialPort;
     port_->begin(baudRate);
@@ -59,13 +63,13 @@ bool STSServoDriver::setId(byte const& oldServoId, byte const& newServoId)
     if (ping(newServoId))
         return false; // address taken
     // Unlock EEPROM
-    if (!writeRegister(oldServoId, STS::registers::WRITE_LOCK, 0))
+    if (!writeRegister(oldServoId, STSRegisters::WRITE_LOCK, 0))
         return false;
     // Write new ID
-    if (!writeRegister(oldServoId, STS::registers::ID, newServoId))
+    if (!writeRegister(oldServoId, STSRegisters::ID, newServoId))
         return false;
     // Lock EEPROM
-    if (!writeRegister(newServoId, STS::registers::WRITE_LOCK, 1))
+    if (!writeRegister(newServoId, STSRegisters::WRITE_LOCK, 1))
       return false;
     return ping(newServoId);
 }
@@ -73,46 +77,46 @@ bool STSServoDriver::setId(byte const& oldServoId, byte const& newServoId)
 
 int STSServoDriver::getCurrentPosition(byte const& servoId)
 {
-    int16_t pos = readTwoBytesRegister(servoId, STS::registers::CURRENT_POSITION);
+    int16_t pos = readTwoBytesRegister(servoId, STSRegisters::CURRENT_POSITION);
     return pos;
 }
 
 
 int STSServoDriver::getCurrentSpeed(byte const& servoId)
 {
-    int16_t vel = readTwoBytesRegister(servoId, STS::registers::CURRENT_SPEED);
+    int16_t vel = readTwoBytesRegister(servoId, STSRegisters::CURRENT_SPEED);
     return vel;
 }
 
 
 int STSServoDriver::getCurrentTemperature(byte const& servoId)
 {
-    return readTwoBytesRegister(servoId, STS::registers::CURRENT_TEMPERATURE);
+    return readTwoBytesRegister(servoId, STSRegisters::CURRENT_TEMPERATURE);
 }
 
 
 int STSServoDriver::getCurrentCurrent(byte const& servoId)
 {
-    int16_t current = readTwoBytesRegister(servoId, STS::registers::CURRENT_CURRENT);
+    int16_t current = readTwoBytesRegister(servoId, STSRegisters::CURRENT_CURRENT);
     return current * 0.0065;
 }
 
 bool STSServoDriver::isMoving(byte const& servoId)
 {
-    byte const result = readRegister(servoId, STS::registers::MOVING_STATUS);
+    byte const result = readRegister(servoId, STSRegisters::MOVING_STATUS);
     return result > 0;
 }
 
 
 bool STSServoDriver::setTargetPosition(byte const& servoId, int const& position, bool const& asynchronous)
 {
-    return writeTwoBytesRegister(servoId, STS::registers::TARGET_POSITION, position, asynchronous);
+    return writeTwoBytesRegister(servoId, STSRegisters::TARGET_POSITION, position, asynchronous);
 }
 
 
 bool STSServoDriver::setTargetVelocity(byte const& servoId, int const& velocity, bool const& asynchronous)
 {
-    return writeTwoBytesRegister(servoId, STS::registers::RUNNING_SPEED, velocity, asynchronous);
+    return writeTwoBytesRegister(servoId, STSRegisters::RUNNING_SPEED, velocity, asynchronous);
 }
 
 
@@ -239,7 +243,7 @@ int STSServoDriver::recieveMessage(byte const& servoId,
     digitalWrite(dirPin_, LOW);
     byte result[readLength + 5];
     size_t rd = port_->readBytes(result, readLength + 5);
-    if (rd != readLength + 5)
+    if (rd != (unsigned short)(readLength + 5))
         return -1;
     // Check message integrity
     if (result[0] != 0xFF || result[1] != 0xFF || result[2] != servoId || result[3] != readLength + 1)
