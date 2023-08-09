@@ -98,9 +98,16 @@ bool STSServoDriver::isMoving(byte const &servoId)
     return result > 0;
 }
 
-bool STSServoDriver::setTargetPosition(byte const &servoId, int const &position, bool const &asynchronous)
+bool STSServoDriver::setTargetPosition(byte const &servoId, int const &position, int const &speed, bool const &asynchronous)
 {
-    return writeTwoBytesRegister(servoId, STSRegisters::TARGET_POSITION, position, asynchronous);
+    byte params[6] = {
+        static_cast<unsigned char>(position & 0xFF),
+        static_cast<unsigned char>((position >> 8) & 0xFF),
+        0,
+        0,
+        static_cast<unsigned char>(speed & 0xFF),
+        static_cast<unsigned char>((speed >> 8) & 0xFF)};
+    return writeRegisters(servoId, STSRegisters::TARGET_POSITION, sizeof(params), params, asynchronous);
 }
 
 bool STSServoDriver::setTargetVelocity(byte const &servoId, int const &velocity, bool const &asynchronous)

@@ -121,9 +121,10 @@ public:
     /// \note This function assumes that the amplification factor ANGULAR_RESOLUTION is set to 1.
     /// \param[in] servoId ID of the servo
     /// \param[in] position Target position, in counts.
+    /// \param[in] speed speed of the servo.
     /// \param[in] asynchronous If set, write is asynchronous (ACTION must be send to activate)
     /// \return True on success, false otherwise.
-    bool setTargetPosition(byte const &servoId, int const &position, bool const &asynchronous = false);
+    bool setTargetPosition(byte const &servoId, int const &position, int const &speed, bool const &asynchronous = false);
 
     /// \brief Set target servo velocity.
     /// \note This function assumes that the amplification factor ANGULAR_RESOLUTION is set to 1.
@@ -175,9 +176,9 @@ public:
     /// @param[in] servoIds Array of servo IDs to control.
     /// @param[in] positions Array of target positions (corresponds to servoIds).
     /// @param[in] speeds Array of target speeds (corresponds to servoIds).
-    void setTargetPositions(byte  servoIds[],
-                           int  positions[], 
-                           int  speeds[]);
+    void setTargetPositions(byte servoIds[],
+                            int positions[],
+                            int speeds[]);
 
 private:
     /// \brief Clear internal device error.
@@ -231,14 +232,14 @@ private:
                       byte const &readLength,
                       byte *outputBuffer);
 
-    /// @brief Send two bytes and update checksum  
-    /// @param[in] convertedValue Converted int value 
-    /// @param[out] checksum Update the checksum 
+    /// @brief Send two bytes and update checksum
+    /// @param[in] convertedValue Converted int value
+    /// @param[out] checksum Update the checksum
     void sendAndUpdateChecksum(byte convertedValue[], byte &checksum);
 
     /// @brief Convert int to pair of bytes
-    /// @param[in] value 
-    /// @param[out] result 
+    /// @param[in] value
+    /// @param[out] result
     void convertIntToBytes(int const &value, byte result[2]);
 
     HardwareSerial *port_;
