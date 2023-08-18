@@ -176,9 +176,9 @@ public:
     /// @param[in] servoIds Array of servo IDs to control.
     /// @param[in] positions Array of target positions (corresponds to servoIds).
     /// @param[in] speeds Array of target speeds (corresponds to servoIds).
-    void setTargetPositions(byte servoIds[],
-                            int positions[],
-                            int speeds[]);
+    void setTargetPositions(const byte servoIds[],
+                            const int positions[],
+                            const int speeds[]);
 
 private:
     /// \brief Clear internal device error.

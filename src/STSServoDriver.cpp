@@ -264,9 +264,9 @@ void STSServoDriver::sendAndUpdateChecksum(byte convertedValue[], byte &checksum
     checksum += convertedValue[0] + convertedValue[1];
 }
 
-void STSServoDriver::setTargetPositions(byte servoIds[],
-                                        int positions[],
-                                        int speeds[])
+void STSServoDriver::setTargetPositions(const byte servoIds[],
+                                        const int positions[],
+                                        const int speeds[])
 {
     port_->write(0xFF);
     port_->write(0xFF);
