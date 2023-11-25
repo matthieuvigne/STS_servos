@@ -69,9 +69,17 @@ bool STSServoDriver::setId(byte const &oldServoId, byte const &newServoId)
 	return ping(newServoId);
 }
 
-bool STSServoDriver::setGoalAcceleration(byte const &servoId, byte const &acceleration)
+bool STSServoDriver::setPositionOffset(byte const &servoId, int const &positionOffset)
 {
-	return writeRegister(servoId, STSRegisters::TARGET_ACCELERATION, acceleration)
+	if (!writeRegister(servoId, STSRegisters::WRITE_LOCK, 0))
+		return false;
+	// Write new position offset
+	if (!writeTwoBytesRegister(servoId, STSRegisters::POSITION_CORRECTION, positionOffset))
+		return false;
+	// Lock EEPROM
+	if (!writeRegister(servoId, STSRegisters::WRITE_LOCK, 1))
+		return false;
+	return true;
 }
 
 int STSServoDriver::getCurrentPosition(byte const &servoId)
@@ -118,6 +126,11 @@ bool STSServoDriver::setTargetPosition(byte const &servoId, int const &position,
 bool STSServoDriver::setTargetVelocity(byte const &servoId, int const &velocity, bool const &asynchronous)
 {
 	return writeTwoBytesRegister(servoId, STSRegisters::RUNNING_SPEED, velocity, asynchronous);
+}
+
+bool STSServoDriver::setTargetAcceleration(byte const &servoId, byte const &acceleration, bool const &asynchronous)
+{
+	return writeRegister(servoId, STSRegisters::TARGET_ACCELERATION, acceleration, asynchronous)
 }
 
 bool STSServoDriver::trigerAction()

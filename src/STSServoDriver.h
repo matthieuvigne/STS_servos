@@ -90,11 +90,11 @@ public:
 	/// \return True if servo could successfully change ID
 	bool setId(byte const &oldServoId, byte const &newServoId);
 
-	/// \brief Change the goal acceleration of a servo.
+	/// \brief Change the position offset of a servo.
 	/// \param[in] servoId servo ID
-	/// \param[in] acceleration goal acceleration
-	/// \return True if servo could successfully set goal acceleration
-	bool setGoalAcceleration(byte const &servoId, byte const &acceleration)
+	/// \param[in] positionOffset new position offset
+	/// \return True if servo could successfully change position offset
+	bool setPositionOffset(byte const &servoId, int const &positionOffset);
 
 	/// \brief Get current servo position.
 	/// \note This function assumes that the amplification factor ANGULAR_RESOLUTION is set to 1.
@@ -139,6 +139,12 @@ public:
 	/// \param[in] asynchronous If set, write is asynchronous (ACTION must be send to activate)
 	/// \return True on success, false otherwise.
 	bool setTargetVelocity(byte const &servoId, int const &velocity, bool const &asynchronous = false);
+
+	/// \brief Change the target acceleration of a servo.
+	/// \param[in] servoId servo ID
+	/// \param[in] acceleration target acceleration
+	/// \return True if servo could successfully set target acceleration
+	bool setTargetAcceleration(byte const &servoId, byte const &acceleration, bool const &asynchronous = false);
 
 	/// \brief Trigger the action previously stored by an asynchronous write on all servos.
 	/// \return True on success
