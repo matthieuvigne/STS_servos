@@ -90,6 +90,12 @@ public:
 	/// \return True if servo could successfully change ID
 	bool setId(byte const &oldServoId, byte const &newServoId);
 
+	/// \brief Change the goal acceleration of a servo.
+	/// \param[in] servoId servo ID
+	/// \param[in] acceleration goal acceleration
+	/// \return True if servo could successfully set goal acceleration
+	bool setGoalAcceleration(byte const &servoId, byte const &acceleration)
+
 	/// \brief Get current servo position.
 	/// \note This function assumes that the amplification factor ANGULAR_RESOLUTION is set to 1.
 	/// \param[in] servoId ID of the servo

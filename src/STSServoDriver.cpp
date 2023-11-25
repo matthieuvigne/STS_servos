@@ -69,6 +69,11 @@ bool STSServoDriver::setId(byte const &oldServoId, byte const &newServoId)
 	return ping(newServoId);
 }
 
+bool STSServoDriver::setGoalAcceleration(byte const &servoId, byte const &acceleration)
+{
+	return writeRegister(servoId, STSRegisters::TARGET_ACCELERATION, acceleration)
+}
+
 int STSServoDriver::getCurrentPosition(byte const &servoId)
 {
 	int16_t pos = readTwoBytesRegister(servoId, STSRegisters::CURRENT_POSITION);
