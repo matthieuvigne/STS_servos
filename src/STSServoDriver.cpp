@@ -130,7 +130,7 @@ bool STSServoDriver::setTargetVelocity(byte const &servoId, int const &velocity,
 
 bool STSServoDriver::setTargetAcceleration(byte const &servoId, byte const &acceleration, bool const &asynchronous)
 {
-	return writeRegister(servoId, STSRegisters::TARGET_ACCELERATION, acceleration, asynchronous)
+	return writeRegister(servoId, STSRegisters::TARGET_ACCELERATION, acceleration, asynchronous);
 }
 
 bool STSServoDriver::trigerAction()
