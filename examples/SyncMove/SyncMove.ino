@@ -6,24 +6,27 @@
 
 STSServoDriver servos;
 
-byte ids[] = { 1, 2 };
+byte ids[] = {1, 2};
 int positions[2];
-int speeds[] = { 2400, 2400 };
+int speeds[] = {2400, 2400};
 
-void setup() {
+void setup()
+{
   pinMode(13, OUTPUT);
   digitalWrite(13, LOW);
   // Since the serial port is taken by the servo, we can't easily send debug messages, so
   // we use the on-board led instead.
   // Try to connect with the servos, using pin 2 as direction pin and the default (only) serial
   // interface of an Arduino Uno.
-  if (!servos.init(2)) {
+  if (!servos.init(2))
+  {
     // Failed to get a ping reply, turn on the led.
     digitalWrite(13, HIGH);
   }
 }
 
-void loop() {
+void loop()
+{
   // Move to 180deg.
   positions[0] = 2048;
   positions[1] = 2048;
