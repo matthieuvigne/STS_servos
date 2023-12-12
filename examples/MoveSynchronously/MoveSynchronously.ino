@@ -1,5 +1,4 @@
-// Basic example of making a STS3215 servos move async.
-//
+// Basic example of making a STS3215 servos move synchronously.
 // This code will simply make the two servos move from (180, 360)deg.
 
 #include "STSServoDriver.h"
