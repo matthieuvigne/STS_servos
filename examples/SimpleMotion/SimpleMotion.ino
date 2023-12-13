@@ -6,6 +6,9 @@
 
 STSServoDriver servos;
 
+// ID of the servo currently being tested.
+byte SERVO_ID = 1;
+
 void setup() {
   pinMode(13, OUTPUT);
   digitalWrite(13, LOW);
@@ -18,30 +21,35 @@ void setup() {
     // Failed to get a ping reply, turn on the led.
     digitalWrite(13, HIGH);
   }
+
+  // Reset all servos to position mode: servos have three modes (position, velocity, step position).
+  // Position is the default mode so this shouldn't be needed but it's here just to make sure
+  // (depending on what you've run before, the servos could be in a different mode)
+  servos.setMode(0xFE, STSMode::POSITION); // 0xFE is broadcast address and applies to all servos.
 }
 
 void loop()
 {
   // Move servo to 0.
-  servos.setTargetPosition(1, 0);
+  servos.setTargetPosition(SERVO_ID, 0);
   // Wait for servo to start moving, then wait for end of motion
   delay(100);
-  while (servos.isMoving(1))
+  while (servos.isMoving(SERVO_ID))
     delay(50);
   // Wait a bit more to see it stop
   delay(500);
 
   // Move to 180deg.
-  servos.setTargetPosition(1, 2048);
+  servos.setTargetPosition(SERVO_ID, 2048);
   delay(100);
-  while (servos.isMoving(1))
+  while (servos.isMoving(SERVO_ID))
     delay(50);
   delay(500);
 
-  // Move to 360deg.
-  servos.setTargetPosition(1, 4095);
+  // Move to 360deg, at a slower speed (second argument is steps/s).
+  servos.setTargetPosition(SERVO_ID, 4095, 500);
   delay(100);
-  while (servos.isMoving(1))
+  while (servos.isMoving(SERVO_ID))
     delay(50);
   delay(500);
 }

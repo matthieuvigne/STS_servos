@@ -19,6 +19,8 @@ void setup() {
   }
   // Disable torque on servo 1
   servos.writeRegister(1, STS::registers::TORQUE_SWITCH, 0);
+  // Set servo 2 to position mode.
+  servos.setMode(2, STSMode::POSITION);
 }
 
 void loop()

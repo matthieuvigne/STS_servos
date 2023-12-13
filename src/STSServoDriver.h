@@ -63,6 +63,12 @@ namespace STSRegisters
     byte const CURRENT_CURRENT          = 0x45;
 };
 
+enum STSMode{
+    POSITION = 0,
+    VELOCITY = 1,
+    STEP = 3
+};
+
 /// \brief Driver for STS servos, using UART
 class STSServoDriver
 {
@@ -130,7 +136,7 @@ public:
     /// \param[in] speed speed of the servo.
     /// \param[in] asynchronous If set, write is asynchronous (ACTION must be send to activate)
     /// \return True on success, false otherwise.
-    bool setTargetPosition(byte const &servoId, int const &position, int const &speed, bool const &asynchronous = false);
+    bool setTargetPosition(byte const &servoId, int const &position, int const &speed = 4095, bool const &asynchronous = false);
 
     /// \brief Set target servo velocity.
     /// \note This function assumes that the amplification factor ANGULAR_RESOLUTION is set to 1.
@@ -145,6 +151,12 @@ public:
     /// \param[in] acceleration target acceleration
     /// \return True if servo could successfully set target acceleration
     bool setTargetAcceleration(byte const &servoId, byte const &acceleration, bool const &asynchronous = false);
+
+
+    /// \brief Set servo working mode: position, velocity or step.
+    /// \param[in] servoId ID of the servo
+    /// \param[in] mode Desired mode
+    bool setMode(unsigned char const& servoId, STSMode const& mode);
 
     /// \brief Trigger the action previously stored by an asynchronous write on all servos.
     /// \return True on success
@@ -189,15 +201,12 @@ public:
     /// @param[in] servoIds Array of servo IDs to control.
     /// @param[in] positions Array of target positions (corresponds to servoIds).
     /// @param[in] speeds Array of target speeds (corresponds to servoIds).
-    void setTargetPositions(byte const &NumberOfServos,
+    void setTargetPositions(byte const &numberOfServos,
                             const byte servoIds[],
                             const int positions[],
                             const int speeds[]);
 
 private:
-    /// \brief Clear internal device error.
-    // void clearError();
-
     /// \brief Send a message to the servos.
     /// \param[in] servoId ID of the servo
     /// \param[in] commandID Command id
@@ -218,7 +227,7 @@ private:
     ///         -1 if read failed due to timeout
     ///         -2 if invalid message (no 0XFF, wrong servo id)
     ///         -3 if invalid checksum
-    int recieveMessage(byte const &servoId,
+    int receiveMessage(byte const &servoId,
                        byte const &readLength,
                        byte *outputBuffer);
 

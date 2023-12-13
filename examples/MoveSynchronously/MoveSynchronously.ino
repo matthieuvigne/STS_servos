@@ -22,6 +22,10 @@ void setup()
         // Failed to get a ping reply, turn on the led.
         digitalWrite(13, HIGH);
     }
+    // Reset all servos to position mode: servos have three modes (position, velocity, step position).
+    // Position is the default mode so this shouldn't be needed but it's here just to make sure
+    // (depending on what you've run before, the servos could be in a different mode)
+    servos.setMode(0xFE, STSMode::POSITION); // 0xFE is broadcast address and applies to all servos.
 }
 
 void loop()
@@ -29,7 +33,7 @@ void loop()
     // Move to 180deg.
     positions[0] = 2048;
     positions[1] = 2048;
-    servos.setTargetPositions(ids, positions, speeds);
+    servos.setTargetPositions(2, ids, positions, speeds);
     // Wait for servo to start moving, then wait for end of motion
     delay(100);
     while (servos.isMoving(1))
@@ -40,7 +44,7 @@ void loop()
     // Move to 360deg.
     positions[0] = 4095;
     positions[1] = 4095;
-    servos.setTargetPositions(ids, positions, speeds);
+    servos.setTargetPositions(2, ids, positions, speeds);
     delay(100);
     while (servos.isMoving(1))
         delay(50);

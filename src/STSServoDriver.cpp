@@ -1,4 +1,5 @@
 #include "STSServoDriver.h"
+#include "HardwareSerial.h"
 
 namespace instruction
 {
@@ -15,15 +16,16 @@ STSServoDriver::STSServoDriver() : dirPin_(0)
 {
 }
 
-bool STSServoDriver::init(byte const &dirPin, HardwareSerial *serialPort, long const &baudRate)
+bool STSServoDriver::init(byte const& dirPin, HardwareSerial *serialPort,long const& baudRate)
 {
-#ifdef SERIAL_H
+#if defined(SERIAL_H) || defined(HardwareSerial_h)
     if (serialPort == nullptr)
         serialPort = &Serial;
 #endif
     // Open port
     port_ = serialPort;
     port_->begin(baudRate);
+    port_->setTimeout(10);
     dirPin_ = dirPin;
     pinMode(dirPin_, OUTPUT);
 
@@ -45,7 +47,7 @@ bool STSServoDriver::ping(byte const &servoId)
     if (send != 6)
         return false;
     // Read response
-    int rd = recieveMessage(servoId, 1, response);
+    int rd = receiveMessage(servoId, 1, response);
     if (rd < 0)
         return false;
     return response[0] == 0x00;
@@ -91,7 +93,11 @@ int STSServoDriver::getCurrentPosition(byte const &servoId)
 int STSServoDriver::getCurrentSpeed(byte const &servoId)
 {
     int16_t vel = readTwoBytesRegister(servoId, STSRegisters::CURRENT_SPEED);
-    return vel;
+    // Feetech does something particular in using bit 15 as a sign bit, instead of using the standard format...
+    int16_t signedVel = vel & ~0x8000;
+    if (vel & 0x8000)
+        signedVel = -signedVel;
+    return signedVel;
 }
 
 int STSServoDriver::getCurrentTemperature(byte const &servoId)
@@ -125,13 +131,23 @@ bool STSServoDriver::setTargetPosition(byte const &servoId, int const &position,
 
 bool STSServoDriver::setTargetVelocity(byte const &servoId, int const &velocity, bool const &asynchronous)
 {
-    return writeTwoBytesRegister(servoId, STSRegisters::RUNNING_SPEED, velocity, asynchronous);
+    // Feetech does something particular in using bit 15 as a sign bit, instead of using the standard format...
+    unsigned int feetechVelocity = abs(velocity);
+    if (velocity < 0)
+        feetechVelocity |= 0x8000;
+    return writeTwoBytesRegister(servoId, STSRegisters::RUNNING_SPEED, feetechVelocity, asynchronous);
 }
 
 bool STSServoDriver::setTargetAcceleration(byte const &servoId, byte const &acceleration, bool const &asynchronous)
 {
     return writeRegister(servoId, STSRegisters::TARGET_ACCELERATION, acceleration, asynchronous);
 }
+
+bool STSServoDriver::setMode(unsigned char const& servoId, STSMode const& mode)
+{
+    writeRegister(servoId, STSRegisters::OPERATION_MODE, static_cast<unsigned char>(mode));
+}
+
 
 bool STSServoDriver::trigerAction()
 {
@@ -236,7 +252,7 @@ int STSServoDriver::readRegisters(byte const &servoId,
         return -1;
     // Read
     byte result[readLength + 1];
-    int rd = recieveMessage(servoId, readLength + 1, result);
+    int rd = receiveMessage(servoId, readLength + 1, result);
     if (rd < 0)
         return rd;
 
@@ -245,8 +261,8 @@ int STSServoDriver::readRegisters(byte const &servoId,
     return 0;
 }
 
-int STSServoDriver::recieveMessage(byte const &servoId,
-                                   byte const &readLength,
+int STSServoDriver::receiveMessage(byte const& servoId,
+                                   byte const& readLength,
                                    byte *outputBuffer)
 {
     digitalWrite(dirPin_, LOW);
@@ -282,19 +298,19 @@ void STSServoDriver::sendAndUpdateChecksum(byte convertedValue[], byte &checksum
     checksum += convertedValue[0] + convertedValue[1];
 }
 
-void STSServoDriver::setTargetPositions(byte const &NumberOfServos, const byte servoIds[],
+void STSServoDriver::setTargetPositions(byte const &numberOfServos, const byte servoIds[],
                                         const int positions[],
                                         const int speeds[])
 {
     port_->write(0xFF);
     port_->write(0xFF);
     port_->write(0XFE);
-    port_->write(NumberOfServos * 7 + 4);
+    port_->write(numberOfServos * 7 + 4);
     port_->write(instruction::SYNCWRITE);
     port_->write(STSRegisters::TARGET_POSITION);
     port_->write(6);
-    byte checksum = 0xFE + NumberOfServos * 7 + 4 + instruction::SYNCWRITE + STSRegisters::TARGET_POSITION + 6;
-    for (int index = 0; index < NumberOfServos; index++)
+    byte checksum = 0xFE + numberOfServos * 7 + 4 + instruction::SYNCWRITE + STSRegisters::TARGET_POSITION + 6;
+    for (int index = 0; index < numberOfServos; index++)
     {
         checksum += servoIds[index];
         port_->write(servoIds[index]);
