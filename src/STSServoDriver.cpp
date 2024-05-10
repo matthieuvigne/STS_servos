@@ -3,7 +3,7 @@
 
 namespace instruction
 {
-    byte const PING       = 0x01;
+    byte const PING_       = 0x01;
     byte const READ       = 0x02;
     byte const WRITE      = 0x03;
     byte const REGWRITE   = 0x04;
@@ -29,6 +29,9 @@ bool STSServoDriver::init(byte const& dirPin, HardwareSerial *serialPort,long co
     dirPin_ = dirPin;
     pinMode(dirPin_, OUTPUT);
 
+    for (int i = 0; i < 256; i++)
+        servoType_[i] = ServoType::UNKNOWN;
+
     // Test that a servo is present.
     for (byte i = 0; i < 0xFE; i++)
         if (ping(i))
@@ -40,7 +43,7 @@ bool STSServoDriver::ping(byte const &servoId)
 {
     byte response[1] = {0xFF};
     int send = sendMessage(servoId,
-                           instruction::PING,
+                           instruction::PING_,
                            0,
                            response);
     // Failed to send
@@ -55,19 +58,33 @@ bool STSServoDriver::ping(byte const &servoId)
 
 bool STSServoDriver::setId(byte const &oldServoId, byte const &newServoId)
 {
+    if (servoType_[oldServoId] == ServoType::UNKNOWN)
+    {
+        determineServoType(oldServoId);
+    }
+
     if (oldServoId >= 0xFE || newServoId >= 0xFE)
         return false;
     if (ping(newServoId))
         return false; // address taken
+
+    unsigned char lockRegister = STSRegisters::WRITE_LOCK;
+    if (servoType_[oldServoId] == ServoType::SCS)
+    {
+        lockRegister = STSRegisters::TORQUE_LIMIT; // On SCS, this has been remapped.
+    }
     // Unlock EEPROM
-    if (!writeRegister(oldServoId, STSRegisters::WRITE_LOCK, 0))
+    if (!writeRegister(oldServoId, lockRegister, 0))
         return false;
     // Write new ID
     if (!writeRegister(oldServoId, STSRegisters::ID, newServoId))
         return false;
     // Lock EEPROM
-    if (!writeRegister(newServoId, STSRegisters::WRITE_LOCK, 1))
+    if (!writeRegister(newServoId, lockRegister, 1))
         return false;
+    // Update servo type cache.
+    servoType_[newServoId] = servoType_[oldServoId];
+    servoType_[oldServoId] = ServoType::UNKNOWN;
     return ping(newServoId);
 }
 
@@ -213,8 +230,32 @@ bool STSServoDriver::writeTwoBytesRegister(byte const &servoId,
                                            int16_t const &value,
                                            bool const &asynchronous)
 {
-    byte params[2] = {static_cast<unsigned char>(value & 0xFF),
-                      static_cast<unsigned char>((value >> 8) & 0xFF)};
+    uint16_t servoValue = 0;
+    if (servoType_[servoId] == ServoType::UNKNOWN)
+    {
+        determineServoType(servoId);
+    }
+
+    // Handle different servo type.
+    switch(servoType_[servoId])
+    {
+        case ServoType::SCS:
+            // Little endian ; byte 10 is sign.
+            servoValue = abs(value);
+            if (value < 0)
+                servoValue = 0x0400  | servoValue;
+            // Invert endianness
+            servoValue = (servoValue >> 8) + ((servoValue & 0xFF) << 8);
+            break;
+        case ServoType::STS:
+        default:
+            servoValue = abs(value);
+            if (value < 0)
+                servoValue = 0x8000  | servoValue;
+            break;
+    }
+    byte params[2] = {static_cast<unsigned char>(servoValue & 0xFF),
+                               static_cast<unsigned char>((servoValue >> 8) & 0xFF)};
     return writeRegisters(servoId, registerId, 2, params, asynchronous);
 }
 
@@ -229,11 +270,36 @@ byte STSServoDriver::readRegister(byte const &servoId, byte const &registerId)
 
 int16_t STSServoDriver::readTwoBytesRegister(byte const &servoId, byte const &registerId)
 {
-    byte result[2] = {0, 0};
+    if (servoType_[servoId] == ServoType::UNKNOWN)
+    {
+        determineServoType(servoId);
+    }
+
+    unsigned char result[2] = {0, 0};
+    int16_t value = 0;
+    int16_t signedValue = 0;
     int rc = readRegisters(servoId, registerId, 2, result);
     if (rc < 0)
         return 0;
-    return result[0] + (result[1] << 8);
+    switch(servoType_[servoId])
+    {
+        case ServoType::SCS:
+            value = static_cast<int16_t>(result[1] +  (result[0] << 8));
+            // Bit 15 is sign
+            signedValue = value & ~0x8000;
+            if (value & 0x8000)
+                signedValue = -signedValue;
+            return signedValue;
+        case ServoType::STS:
+            value = static_cast<int16_t>(result[0] +  (result[1] << 8));
+            // Bit 15 is sign
+            signedValue = value & ~0x8000;
+            if (value & 0x8000)
+                signedValue = -signedValue;
+            return signedValue;
+        default:
+            return 0;
+    }
 }
 
 int STSServoDriver::readRegisters(byte const &servoId,
@@ -244,8 +310,7 @@ int STSServoDriver::readRegisters(byte const &servoId,
     byte readParam[2] = {startRegister, readLength};
     // Flush
     while (port_->read() != -1)
-        ;
-    ;
+        ;;
     int send = sendMessage(servoId, instruction::READ, 2, readParam);
     // Failed to send
     if (send != 8)
@@ -323,4 +388,13 @@ void STSServoDriver::setTargetPositions(byte const &numberOfServos, const byte s
         sendAndUpdateChecksum(intAsByte, checksum);
     }
     port_->write(~checksum);
+}
+
+void STSServoDriver::determineServoType(byte const& servoId)
+{
+    switch(readRegister(servoId, STSRegisters::SERVO_MAJOR))
+    {
+        case 9: servoType_[servoId] = ServoType::STS; break;
+        case 5: servoType_[servoId] = ServoType::SCS; break;
+    }
 }

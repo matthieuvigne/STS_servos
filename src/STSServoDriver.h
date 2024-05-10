@@ -69,6 +69,13 @@ enum STSMode{
     STEP = 3
 };
 
+enum ServoType
+{
+    UNKNOWN = 0,
+    STS = 1,
+    SCS = 2
+};
+
 /// \brief Driver for STS servos, using UART
 class STSServoDriver
 {
@@ -265,7 +272,12 @@ private:
     /// @param[out] result
     void convertIntToBytes(int const &value, byte result[2]);
 
+    /// \brief Determine servo type (STS or SCS, they don't use exactly the same protocol)
+    void determineServoType(byte const& servoId);
+
     HardwareSerial *port_;
     byte dirPin_; ///< Direction pin number.
+
+    ServoType servoType_[256]; // Map of servo types - STS/SCS servos have slightly different protocol.
 };
 #endif
