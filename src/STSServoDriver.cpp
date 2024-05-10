@@ -103,18 +103,12 @@ bool STSServoDriver::setPositionOffset(byte const &servoId, int const &positionO
 
 int STSServoDriver::getCurrentPosition(byte const &servoId)
 {
-    int16_t pos = readTwoBytesRegister(servoId, STSRegisters::CURRENT_POSITION);
-    return pos;
+    return readTwoBytesRegister(servoId, STSRegisters::CURRENT_POSITION);
 }
 
 int STSServoDriver::getCurrentSpeed(byte const &servoId)
 {
-    int16_t vel = readTwoBytesRegister(servoId, STSRegisters::CURRENT_SPEED);
-    // Feetech does something particular in using bit 15 as a sign bit, instead of using the standard format...
-    int16_t signedVel = vel & ~0x8000;
-    if (vel & 0x8000)
-        signedVel = -signedVel;
-    return signedVel;
+    return readTwoBytesRegister(servoId, STSRegisters::CURRENT_SPEED);
 }
 
 int STSServoDriver::getCurrentTemperature(byte const &servoId)
@@ -122,7 +116,7 @@ int STSServoDriver::getCurrentTemperature(byte const &servoId)
     return readTwoBytesRegister(servoId, STSRegisters::CURRENT_TEMPERATURE);
 }
 
-int STSServoDriver::getCurrentCurrent(byte const &servoId)
+float STSServoDriver::getCurrentCurrent(byte const &servoId)
 {
     int16_t current = readTwoBytesRegister(servoId, STSRegisters::CURRENT_CURRENT);
     return current * 0.0065;
@@ -136,23 +130,17 @@ bool STSServoDriver::isMoving(byte const &servoId)
 
 bool STSServoDriver::setTargetPosition(byte const &servoId, int const &position, int const &speed, bool const &asynchronous)
 {
-    byte params[6] = {
-        static_cast<unsigned char>(position & 0xFF),
-        static_cast<unsigned char>((position >> 8) & 0xFF),
-        0,
-        0,
-        static_cast<unsigned char>(speed & 0xFF),
-        static_cast<unsigned char>((speed >> 8) & 0xFF)};
+    byte params[6] = {0, 0, // Position
+        0, 0, // Padding
+        0, 0}; // Velocity
+    convertIntToBytes(servoId, position, &params[0]);
+    convertIntToBytes(servoId, speed, &params[4]);
     return writeRegisters(servoId, STSRegisters::TARGET_POSITION, sizeof(params), params, asynchronous);
 }
 
 bool STSServoDriver::setTargetVelocity(byte const &servoId, int const &velocity, bool const &asynchronous)
 {
-    // Feetech does something particular in using bit 15 as a sign bit, instead of using the standard format...
-    unsigned int feetechVelocity = abs(velocity);
-    if (velocity < 0)
-        feetechVelocity |= 0x8000;
-    return writeTwoBytesRegister(servoId, STSRegisters::RUNNING_SPEED, feetechVelocity, asynchronous);
+    return writeTwoBytesRegister(servoId, STSRegisters::RUNNING_SPEED, velocity, asynchronous);
 }
 
 bool STSServoDriver::setTargetAcceleration(byte const &servoId, byte const &acceleration, bool const &asynchronous)
@@ -230,32 +218,8 @@ bool STSServoDriver::writeTwoBytesRegister(byte const &servoId,
                                            int16_t const &value,
                                            bool const &asynchronous)
 {
-    uint16_t servoValue = 0;
-    if (servoType_[servoId] == ServoType::UNKNOWN)
-    {
-        determineServoType(servoId);
-    }
-
-    // Handle different servo type.
-    switch(servoType_[servoId])
-    {
-        case ServoType::SCS:
-            // Little endian ; byte 10 is sign.
-            servoValue = abs(value);
-            if (value < 0)
-                servoValue = 0x0400  | servoValue;
-            // Invert endianness
-            servoValue = (servoValue >> 8) + ((servoValue & 0xFF) << 8);
-            break;
-        case ServoType::STS:
-        default:
-            servoValue = abs(value);
-            if (value < 0)
-                servoValue = 0x8000  | servoValue;
-            break;
-    }
-    byte params[2] = {static_cast<unsigned char>(servoValue & 0xFF),
-                               static_cast<unsigned char>((servoValue >> 8) & 0xFF)};
+    byte params[2] = {0, 0};
+    convertIntToBytes(servoId, value, params);
     return writeRegisters(servoId, registerId, 2, params, asynchronous);
 }
 
@@ -351,10 +315,34 @@ int STSServoDriver::receiveMessage(byte const& servoId,
     return 0;
 }
 
-void STSServoDriver::convertIntToBytes(int const &value, byte result[2])
+void STSServoDriver::convertIntToBytes(byte const& servoId, int const &value, byte result[2])
 {
-    result[0] = value & 0xFF;
-    result[1] = (value >> 8) & 0xFF;
+    uint16_t servoValue = 0;
+    if (servoType_[servoId] == ServoType::UNKNOWN)
+    {
+        determineServoType(servoId);
+    }
+
+    // Handle different servo type.
+    switch(servoType_[servoId])
+    {
+        case ServoType::SCS:
+            // Little endian ; byte 10 is sign.
+            servoValue = abs(value);
+            if (value < 0)
+                servoValue = 0x0400  | servoValue;
+            // Invert endianness
+            servoValue = (servoValue >> 8) + ((servoValue & 0xFF) << 8);
+            break;
+        case ServoType::STS:
+        default:
+            servoValue = abs(value);
+            if (value < 0)
+                servoValue = 0x8000  | servoValue;
+            break;
+    }
+    result[0] = static_cast<unsigned char>(servoValue & 0xFF);
+    result[1] = static_cast<unsigned char>((servoValue >> 8) & 0xFF);
 }
 
 void STSServoDriver::sendAndUpdateChecksum(byte convertedValue[], byte &checksum)
@@ -380,11 +368,11 @@ void STSServoDriver::setTargetPositions(byte const &numberOfServos, const byte s
         checksum += servoIds[index];
         port_->write(servoIds[index]);
         byte intAsByte[2];
-        convertIntToBytes(positions[index], intAsByte);
+        convertIntToBytes(servoIds[index], positions[index], intAsByte);
         sendAndUpdateChecksum(intAsByte, checksum);
         port_->write(0);
         port_->write(0);
-        convertIntToBytes(speeds[index], intAsByte);
+        convertIntToBytes(servoIds[index], speeds[index], intAsByte);
         sendAndUpdateChecksum(intAsByte, checksum);
     }
     port_->write(~checksum);

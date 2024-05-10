@@ -129,7 +129,7 @@ public:
     /// \brief Get current servo current.
     /// \param[in] servoId ID of the servo
     /// \return Current, in A.
-    int getCurrentCurrent(byte const &servoId);
+    float getCurrentCurrent(byte const &servoId);
 
     /// \brief Check if the servo is moving
     /// \param[in] servoId ID of the servo
@@ -270,7 +270,7 @@ private:
     /// @brief Convert int to pair of bytes
     /// @param[in] value
     /// @param[out] result
-    void convertIntToBytes(int const &value, byte result[2]);
+    void convertIntToBytes(byte const& servoId, int const &value, byte result[2]);
 
     /// \brief Determine servo type (STS or SCS, they don't use exactly the same protocol)
     void determineServoType(byte const& servoId);
