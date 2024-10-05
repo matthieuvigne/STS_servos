@@ -18,7 +18,8 @@
 // Caution !!!
 // This sketch cannot work with Arduino UNO R3 because it has only single serial
 // port. This sketch needs two ports; one is for serial with PC, the another is
-// for servo control The UNO boars is not suitable for debugging servo control.
+// for servo control. The UNO boards is not suitable for debugging servo
+// control.
 
 #include <Arduino.h>
 
