@@ -12,22 +12,27 @@
 // | :-----: | :---: | :--------: |
 // |   5V    |  --   |     5V     |
 // |   GND   |  --   |    GND     |
-// | 26 (RX) |  --   | RXD (Silk) |
-// | 32 (TX) |  --   | TXD (Silk) |
+// | 32 (RX) |  --   | RXD (Silk) |
+// | 26 (TX) |  --   | TXD (Silk) |
 //
 // Caution !!!
 // This sketch cannot work with Arduino UNO R3 because it has only single serial
 // port. This sketch needs two ports; one is for serial with PC, the another is
-// for servo control. The UNO boards is not suitable for debugging servo
-// control.
+// for servo control The UNO boars is not suitable for debugging servo control.
 
 #include <Arduino.h>
 
 #include "STSServoDriver.h"
 
 // define serial pins for servo control
-#define RXD 26
-#define TXD 32
+#if defined(ARDUINO_M5Stack_ATOM)
+#define RXD 32
+#define TXD 26
+
+#elif defined(ARDUINO_XIAO_ESP32C3)
+#define RXD 7
+#define TXD 6
+#endif
 
 STSServoDriver servos;
 
@@ -63,6 +68,10 @@ void setup() {
 }
 
 void loop() {
+  if (!servos.ping(SERVO_ID)) {
+    Serial.printf("servo-%02d response nothing\n\r", SERVO_ID);
+  }
+
   // Move servo to 0.
   servos.setTargetPosition(SERVO_ID, 0);
   // Wait for servo to start moving, then wait for end of motion

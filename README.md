@@ -1,6 +1,7 @@
 # Arduino STS_Servos driver
 
 [![arduino-library-badge](https://www.ardu-badge.com/badge/STS_Servos.svg?)](https://www.ardu-badge.com/STS_Servos)
+![](https://github.com/botamochi6277/STS_Servos/actions/workflows/platformio-ci.yml/badge.svg)
 
 <https://github.com/user-attachments/assets/4ff4030c-b8c4-4994-ae51-3bceac055187>
 
@@ -27,5 +28,5 @@ The I/F board has pins to communicate with a micro-controller. The following tab
 | :-----: | :---: | :--------: |
 |   5V    |  --   |     5V     |
 |   GND   |  --   |    GND     |
-| 26 (RX) |  --   | RXD (Silk) |
-| 32 (TX) |  --   | TXD (Silk) |
+| 32 (RX) |  --   | RXD (Silk) |
+| 26 (TX) |  --   | TXD (Silk) |
