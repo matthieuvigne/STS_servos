@@ -1,7 +1,7 @@
 # Arduino STS_Servos driver
 
 [![arduino-library-badge](https://www.ardu-badge.com/badge/STS_Servos.svg?)](https://www.ardu-badge.com/STS_Servos)
-![](https://github.com/botamochi6277/STS_Servos/actions/workflows/platformio-ci.yml/badge.svg)
+![ci status badge](https://github.com/matthieuvigne/STS_Servos/actions/workflows/platformio-ci.yml/badge.svg)
 
 <https://github.com/user-attachments/assets/4ff4030c-b8c4-4994-ae51-3bceac055187>
 
