@@ -27,7 +27,10 @@ bool STSServoDriver::init(byte const& dirPin, HardwareSerial *serialPort,long co
     port_->begin(baudRate);
     port_->setTimeout(10);
     dirPin_ = dirPin;
-    pinMode(dirPin_, OUTPUT);
+    if (this->dirPin_ < 255)
+    {
+        pinMode(dirPin_, OUTPUT);
+    }
 
     for (int i = 0; i < 256; i++)
         servoType_[i] = ServoType::UNKNOWN;
@@ -37,6 +40,11 @@ bool STSServoDriver::init(byte const& dirPin, HardwareSerial *serialPort,long co
         if (ping(i))
             return true;
     return false;
+}
+
+bool STSServoDriver::init(HardwareSerial *serialPort, long const& baudRate)
+{
+    return this->init(255, serialPort, baudRate);
 }
 
 bool STSServoDriver::ping(byte const &servoId)
@@ -150,7 +158,7 @@ bool STSServoDriver::setTargetAcceleration(byte const &servoId, byte const &acce
 
 bool STSServoDriver::setMode(unsigned char const& servoId, STSMode const& mode)
 {
-    writeRegister(servoId, STSRegisters::OPERATION_MODE, static_cast<unsigned char>(mode));
+    return writeRegister(servoId, STSRegisters::OPERATION_MODE, static_cast<unsigned char>(mode));
 }
 
 
@@ -179,10 +187,13 @@ int STSServoDriver::sendMessage(byte const &servoId,
         checksum += parameters[i];
     }
     message[5 + paramLength] = ~checksum;
-
-    digitalWrite(dirPin_, HIGH);
+    if (this->dirPin_ < 255){
+        digitalWrite(dirPin_, HIGH);
+    }
     int ret = port_->write(message, 6 + paramLength);
-    digitalWrite(dirPin_, LOW);
+    if (this->dirPin_ < 255){
+        digitalWrite(dirPin_, LOW);
+    }
     // Give time for the message to be processed.
     delayMicroseconds(200);
     return ret;
@@ -294,7 +305,10 @@ int STSServoDriver::receiveMessage(byte const& servoId,
                                    byte const& readLength,
                                    byte *outputBuffer)
 {
-    digitalWrite(dirPin_, LOW);
+    if (this->dirPin_ < 255){
+        digitalWrite(dirPin_, LOW);
+    }
+    
     byte result[readLength + 5];
     size_t rd = port_->readBytes(result, readLength + 5);
     if (rd != (unsigned short)(readLength + 5))

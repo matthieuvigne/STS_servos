@@ -1,0 +1,28 @@
+# CI documents: https://docs.platformio.org/en/latest/integration/ci/github-actions.html#integration
+name: PlatformIO CI
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        example: [ ./examples/SimpleSweepWithInterfaceBoard/SimpleSweepWithInterfaceBoard.ino]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/cache@v4
+      with:
+        path: |
+                ~/.cache/pip
+                ~/.platformio/.cache
+        key: ${{ runner.os }}-pio
+    - uses: actions/setup-python@v5
+      with:
+          python-version: '3.11'
+    - name: Install PlatformIO Core
+      run: pip install --upgrade platformio
+    - name: Build PlatformIO examples
+      run: pio ci --board=m5stack-atom  -l ./src
+      env:
+        PLATFORMIO_CI_SRC: ${{ matrix.example }}

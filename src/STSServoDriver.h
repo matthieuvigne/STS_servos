@@ -80,7 +80,7 @@ enum ServoType
 class STSServoDriver
 {
 public:
-    /// \brief Contstructor.
+    /// \brief Constructor.
     STSServoDriver();
 
     /// \brief Initialize the servo driver.
@@ -90,6 +90,15 @@ public:
     /// \param baudRate Baud rate, default 1Mbps
     /// \returns  True on success (at least one servo responds to ping)
     bool init(byte const &dirPin, HardwareSerial *serialPort = nullptr, long const &baudRate = 1000000);
+
+    /// \brief Initialize the servo driver without direction pin.
+    /// when you use an interface board including FE-URT-1, direction pin is not required.
+    /// The board controls the direction of signals to FeeTech serial servos.
+    /// In this method, when direction pin number is 255, the pin is inactive.  
+    /// \param serialPort Serial port, default is Serial
+    /// \param baudRate Baud rate, default 1Mbps
+    /// \returns  True on success (at least one servo responds to ping)
+    bool init(HardwareSerial *serialPort = nullptr, long const &baudRate = 1000000);
 
     /// \brief Ping servo
     /// \param[in] servoId ID of the servo
