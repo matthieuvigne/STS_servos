@@ -25,7 +25,7 @@ bool STSServoDriver::init(byte const& dirPin, HardwareSerial *serialPort,long co
     // Open port
     port_ = serialPort;
     port_->begin(baudRate);
-    port_->setTimeout(10);
+    port_->setTimeout(2);
     dirPin_ = dirPin;
     if (this->dirPin_ < 255)
     {
@@ -84,16 +84,29 @@ bool STSServoDriver::setId(byte const &oldServoId, byte const &newServoId)
     // Unlock EEPROM
     if (!writeRegister(oldServoId, lockRegister, 0))
         return false;
+    delay(5);
     // Write new ID
     if (!writeRegister(oldServoId, STSRegisters::ID, newServoId))
         return false;
     // Lock EEPROM
+    delay(5);
     if (!writeRegister(newServoId, lockRegister, 1))
         return false;
-    // Update servo type cache.
-    servoType_[newServoId] = servoType_[oldServoId];
-    servoType_[oldServoId] = ServoType::UNKNOWN;
-    return ping(newServoId);
+    // Give it some time to change id.
+    bool hasPing = false;
+    int nIter = 0;
+    while (!hasPing && nIter < 10)
+    {
+      delay(50);
+      hasPing = ping(newServoId);
+    }
+    if (hasPing)
+    {
+      // Update servo type cache.
+      servoType_[newServoId] = servoType_[oldServoId];
+      servoType_[oldServoId] = ServoType::UNKNOWN;
+    }
+    return hasPing;
 }
 
 bool STSServoDriver::setPositionOffset(byte const &servoId, int const &positionOffset)
