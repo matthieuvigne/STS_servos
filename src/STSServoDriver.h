@@ -94,7 +94,7 @@ public:
     /// \brief Initialize the servo driver without direction pin.
     /// when you use an interface board including FE-URT-1, direction pin is not required.
     /// The board controls the direction of signals to FeeTech serial servos.
-    /// In this method, when direction pin number is 255, the pin is inactive.  
+    /// In this method, when direction pin number is 255, the pin is inactive.
     /// \param serialPort Serial port, default is Serial
     /// \param baudRate Baud rate, default 1Mbps
     /// \returns  True on success (at least one servo responds to ping)
@@ -270,11 +270,6 @@ private:
                       byte const &startRegister,
                       byte const &readLength,
                       byte *outputBuffer);
-
-    /// @brief Send two bytes and update checksum
-    /// @param[in] convertedValue Converted int value
-    /// @param[out] checksum Update the checksum
-    void sendAndUpdateChecksum(byte convertedValue[], byte &checksum);
 
     /// @brief Convert int to pair of bytes
     /// @param[in] value

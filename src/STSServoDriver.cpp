@@ -204,6 +204,7 @@ int STSServoDriver::sendMessage(byte const &servoId,
         digitalWrite(dirPin_, HIGH);
     }
     int ret = port_->write(message, 6 + paramLength);
+    port_->flush();
     if (this->dirPin_ < 255){
         digitalWrite(dirPin_, LOW);
     }
@@ -321,7 +322,7 @@ int STSServoDriver::receiveMessage(byte const& servoId,
     if (this->dirPin_ < 255){
         digitalWrite(dirPin_, LOW);
     }
-    
+
     byte result[readLength + 5];
     size_t rd = port_->readBytes(result, readLength + 5);
     if (rd != (unsigned short)(readLength + 5))
@@ -372,37 +373,24 @@ void STSServoDriver::convertIntToBytes(byte const& servoId, int const &value, by
     result[1] = static_cast<unsigned char>((servoValue >> 8) & 0xFF);
 }
 
-void STSServoDriver::sendAndUpdateChecksum(byte convertedValue[], byte &checksum)
-{
-    port_->write(convertedValue, 2);
-    checksum += convertedValue[0] + convertedValue[1];
-}
-
 void STSServoDriver::setTargetPositions(byte const &numberOfServos, const byte servoIds[],
                                         const int positions[],
                                         const int speeds[])
 {
-    port_->write(0xFF);
-    port_->write(0xFF);
-    port_->write(0XFE);
-    port_->write(numberOfServos * 7 + 4);
-    port_->write(instruction::SYNCWRITE);
-    port_->write(STSRegisters::TARGET_POSITION);
-    port_->write(6);
-    byte checksum = 0xFE + numberOfServos * 7 + 4 + instruction::SYNCWRITE + STSRegisters::TARGET_POSITION + 6;
+    int const dataLength = 6; // Write 6 bytes to write position + velocity
+    int const offset = dataLength + 1;
+    int const paramLength = numberOfServos * offset + 2;
+    byte payload[paramLength] = {0};
+    payload[0] = STSRegisters::TARGET_POSITION;
+    payload[1] = dataLength;
+
     for (int index = 0; index < numberOfServos; index++)
     {
-        checksum += servoIds[index];
-        port_->write(servoIds[index]);
-        byte intAsByte[2];
-        convertIntToBytes(servoIds[index], positions[index], intAsByte);
-        sendAndUpdateChecksum(intAsByte, checksum);
-        port_->write(0);
-        port_->write(0);
-        convertIntToBytes(servoIds[index], speeds[index], intAsByte);
-        sendAndUpdateChecksum(intAsByte, checksum);
+        payload[2 + offset * index + 0] = servoIds[index];
+        convertIntToBytes(servoIds[index], positions[index], &payload[2 + offset * index + 1]);
+        convertIntToBytes(servoIds[index], speeds[index], &payload[2 + offset * index + 5]);
     }
-    port_->write(~checksum);
+    sendMessage(0xFE, instruction::SYNCWRITE, paramLength, payload);
 }
 
 void STSServoDriver::determineServoType(byte const& servoId)
